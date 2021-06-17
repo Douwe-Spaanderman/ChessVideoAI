@@ -99,7 +99,7 @@ def main_display(input_file, labels=False):
         # easy replace images with label path (important to have the same folder structure)
         repls = ('images', 'label'), ('.png', '.txt')
         labels = functools.reduce(lambda a, kv: a.replace(*kv), repls, input_file)
-    elif input_file.endswith(".txt"):
+    elif labels.endswith(".txt"):
         pass
     else:
         raise ValueError("Annotation neither False nor file is .txt format, therefore it can't be processed.")

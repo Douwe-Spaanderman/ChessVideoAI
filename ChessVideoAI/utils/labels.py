@@ -35,6 +35,9 @@ def read_yolo(file, image, format_out="ml"):
             else:
                 raise ValueError(f"format_out in read_yolo.py must be set to either plot and ml, while {format_out} was provided")
              
+            if x2 <= x1 or y2 <= y1:
+                print(f"the file at {file} has a weird annoated box which could cause problems")
+            
             annotations.append([c, x1, y1, x2, y2])
 
         return np.array(annotations)

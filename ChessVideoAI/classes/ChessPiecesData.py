@@ -1,6 +1,8 @@
 import os
 import numpy as np
 import torch
+import random
+from ChessVideoAI.utils import read_yolo
 from PIL import Image
 import glob
 
@@ -22,26 +24,38 @@ class ChessPiecesData(object):
         img = Image.open(img_path).convert("RGB")
         box = read_yolo(box_path, img)
 
-        # convert everything into a torch.Tensor
-        boxes = torch.as_tensor(box[:,1:], dtype=torch.float32)
-        labels = torch.as_tensor((box[:,0]), dtype=torch.int64)
+        # convert everything into a torch.Tensor and 1 on labels as background is 0
+        labels = [x+1 for x in box[:,0]]
+        labels = torch.as_tensor((labels), dtype=torch.int64)
 
         image_id = torch.tensor([idx])
         area = (box[:, 4] - box[:, 2]) * (box[:, 3] - box[:, 1])
         # suppose all instances are not crowd
         iscrowd = torch.zeros((len(box),), dtype=torch.int64)
+        
+        seed = np.random.randint(2147483647) # make a seed with numpy generator 
+        random.seed(seed) # apply this seed to img tranfsorms
+        torch.manual_seed(seed)
+        if self.transforms is not None:
+            img = self.transforms(img)
+            
+        random.seed(seed)
+        torch.manual_seed(seed)
+        if self.transforms is not None:
+            boxes = self.transforms(np.asarray(box[:,1:]))
+        
+        # Ugly because transformation is wrong for the annotions boxes, have to flat out and switch around x and y
+        boxes = boxes[0]
+        #if len(boxes) == 1:
+        #    boxes = boxes[0]
 
         target = {}
         target["boxes"] = boxes
         target["labels"] = labels
-        target["image_id"] = image_id
-        target["area"] = area
-        target["iscrowd"] = iscrowd
-    
-        print(target)
-        if self.transforms is not None:
-            img, target = self.transforms(img, target)
-
+        #target["image_id"] = image_id
+        #target["area"] = area
+        #target["iscrowd"] = iscrowd
+        
         return img, target
     
     def __len__(self):
